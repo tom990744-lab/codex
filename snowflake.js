@@ -28,6 +28,14 @@ const DEFAULT_EPOCH = 1288834974657n;
 function createSnowflakeIdGenerator(options = {}) {
   const {
     epoch = DEFAULT_EPOCH,
+ * Create a Snowflake ID generator.
+ *
+ * Layout (64-bit signed, positive range):
+ * 1 bit unused + 41 bits timestamp + 5 bits datacenter + 5 bits worker + 12 bits sequence
+ */
+function createSnowflakeIdGenerator(options = {}) {
+  const {
+    epoch = 1577836800000n, // 2020-01-01
     datacenterId = 0n,
     workerId = 0n,
   } = options;
@@ -35,6 +43,14 @@ function createSnowflakeIdGenerator(options = {}) {
   const EPOCH = BigInt(epoch);
   const DATACENTER_ID = BigInt(datacenterId);
   const WORKER_ID = BigInt(workerId);
+
+  const WORKER_ID_BITS = 5n;
+  const DATACENTER_ID_BITS = 5n;
+  const SEQUENCE_BITS = 12n;
+
+  const MAX_WORKER_ID = (1n << WORKER_ID_BITS) - 1n;
+  const MAX_DATACENTER_ID = (1n << DATACENTER_ID_BITS) - 1n;
+  const SEQUENCE_MASK = (1n << SEQUENCE_BITS) - 1n;
 
   if (WORKER_ID < 0n || WORKER_ID > MAX_WORKER_ID) {
     throw new RangeError(`workerId must be between 0 and ${MAX_WORKER_ID}`);
@@ -44,6 +60,10 @@ function createSnowflakeIdGenerator(options = {}) {
     throw new RangeError(`datacenterId must be between 0 and ${MAX_DATACENTER_ID}`);
   }
 
+
+  const WORKER_ID_SHIFT = SEQUENCE_BITS;
+  const DATACENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
+  const TIMESTAMP_LEFT_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
   let sequence = 0n;
   let lastTimestamp = -1n;
 
@@ -80,7 +100,7 @@ function createSnowflakeIdGenerator(options = {}) {
       (DATACENTER_ID << DATACENTER_ID_SHIFT) |
       (WORKER_ID << WORKER_ID_SHIFT) |
       sequence
-    );
+    );    
   };
 
   return {
@@ -110,6 +130,11 @@ function parseSnowflakeId(id, epoch = DEFAULT_EPOCH) {
     datacenterId,
     workerId,
     sequence,
+  const nextIdString = () => nextId().toString();
+
+  return {
+    nextId,
+    nextIdString,
   };
 }
 
@@ -117,4 +142,5 @@ module.exports = {
   DEFAULT_EPOCH,
   createSnowflakeIdGenerator,
   parseSnowflakeId,
+  createSnowflakeIdGenerator,
 };

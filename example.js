@@ -1,3 +1,4 @@
+
 const {
   DEFAULT_EPOCH,
   createSnowflakeIdGenerator,
@@ -28,3 +29,12 @@ console.log('compare:', {
   aNode: `${a.datacenterId}-${a.workerId}`,
   bNode: `${b.datacenterId}-${b.workerId}`,
 });
+const { createSnowflakeIdGenerator } = require('./snowflake');
+
+const generator = createSnowflakeIdGenerator({
+  datacenterId: 1n,
+  workerId: 3n,
+});
+
+console.log(generator.nextIdString());
+console.log(generator.nextIdString());
